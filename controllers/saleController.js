@@ -15,7 +15,7 @@ async function create(req, res, next) {
   }
 }
 
-async function getReport(req, res) {
+async function getReport(req, res, next) {
   try {
     const { page, limit, date, startDate, endDate } = req.query;
 

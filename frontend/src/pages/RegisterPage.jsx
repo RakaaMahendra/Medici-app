@@ -8,7 +8,7 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
-    role: "staff",
+    role: "user",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -95,6 +95,7 @@ export default function RegisterPage() {
               value={form.role}
               onChange={handleChange}
             >
+              <option value="user">User</option>
               <option value="staff">Staff</option>
               <option value="admin">Admin</option>
             </select>

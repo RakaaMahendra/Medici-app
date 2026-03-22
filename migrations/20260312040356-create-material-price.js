@@ -16,10 +16,16 @@ module.exports = {
           key: "id",
         },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL",
+        onDelete: "CASCADE",
       },
       supplierId: {
         type: Sequelize.INTEGER,
+        references: {
+          model: "Suppliers",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "CASCADE",
       },
       price: {
         type: Sequelize.FLOAT,

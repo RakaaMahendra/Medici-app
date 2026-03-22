@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { productionAPI, productAPI } from "../services/api";
+import {
+  productionAPI,
+  productAPI,
+  materialAPI,
+  recipeAPI,
+} from "../services/api";
 import { useToast } from "../components/Toast";
 import { FiPlus, FiTrash2, FiCheckCircle } from "react-icons/fi";
 
 export default function ProductionPage() {
   const [products, setProducts] = useState([]);
+  const [materials, setMaterials] = useState([]);
   const [form, setForm] = useState({ productId: "", qty: "" });
   const [items, setItems] = useState([{ materialId: "", qtyUsed: "" }]);
   const [submitting, setSubmitting] = useState(false);
@@ -12,11 +18,35 @@ export default function ProductionPage() {
   const { showToast, ToastComponent } = useToast();
 
   useEffect(() => {
-    productAPI
-      .getAll()
-      .then((res) => setProducts(res.data))
+    Promise.all([productAPI.getAll(), materialAPI.getAll()])
+      .then(([prodRes, matRes]) => {
+        setProducts(prodRes.data);
+        setMaterials(matRes.data);
+      })
       .catch(() => {});
   }, []);
+
+  // When product is selected, auto-load recipe items
+  const handleProductChange = async (productId) => {
+    setForm({ ...form, productId });
+    if (productId) {
+      try {
+        const res = await recipeAPI.getByProduct(productId);
+        if (res.data && res.data.RecipeItems) {
+          setItems(
+            res.data.RecipeItems.map((ri) => ({
+              materialId: String(ri.materialId),
+              qtyUsed: "",
+            }))
+          );
+          return;
+        }
+      } catch {
+        // No recipe found, keep manual entry
+      }
+    }
+    setItems([{ materialId: "", qtyUsed: "" }]);
+  };
 
   const addItem = () => {
     setItems([...items, { materialId: "", qtyUsed: "" }]);
@@ -90,9 +120,7 @@ export default function ProductionPage() {
                     <select
                       className="form-select"
                       value={form.productId}
-                      onChange={(e) =>
-                        setForm({ ...form, productId: e.target.value })
-                      }
+                      onChange={(e) => handleProductChange(e.target.value)}
                       required
                     >
                       <option value="">Pilih produk...</option>
@@ -152,22 +180,27 @@ export default function ProductionPage() {
                     >
                       <div style={{ flex: 1 }}>
                         {index === 0 && (
-                          <label className="form-label">Material ID</label>
+                          <label className="form-label">Bahan Baku</label>
                         )}
-                        <input
-                          type="number"
-                          className="form-input"
-                          placeholder="ID Material"
+                        <select
+                          className="form-select"
                           value={item.materialId}
                           onChange={(e) =>
                             updateItem(index, "materialId", e.target.value)
                           }
                           required
-                        />
+                        >
+                          <option value="">Pilih bahan...</option>
+                          {materials.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} ({m.unit})
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div style={{ flex: 1 }}>
                         {index === 0 && (
-                          <label className="form-label">Qty Digunakan</label>
+                          <label className="form-label">Qty Aktual</label>
                         )}
                         <input
                           type="number"
@@ -250,18 +283,24 @@ export default function ProductionPage() {
                       <table>
                         <thead>
                           <tr>
-                            <th>Material ID</th>
-                            <th>Expected</th>
-                            <th>Used</th>
-                            <th>Diff</th>
+                            <th>Bahan</th>
+                            <th>Resep</th>
+                            <th>Aktual</th>
+                            <th>Selisih</th>
                           </tr>
                         </thead>
                         <tbody>
                           {result.compare.map((c, i) => (
                             <tr key={i}>
-                              <td>{c.materialId}</td>
-                              <td>{c.expected}</td>
-                              <td>{c.used}</td>
+                              <td style={{ fontWeight: 500 }}>
+                                {c.materialName || `Material #${c.materialId}`}
+                              </td>
+                              <td>
+                                {c.expected} {c.unit || ""}
+                              </td>
+                              <td>
+                                {c.used} {c.unit || ""}
+                              </td>
                               <td>
                                 <span
                                   className={

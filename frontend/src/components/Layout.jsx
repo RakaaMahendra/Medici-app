@@ -25,7 +25,7 @@ export default function Layout() {
 
   const navItems = [];
 
-  if (user?.role === "admin") {
+  if (user?.role === "admin" || user?.role === "user") {
     navItems.push(
       { section: "Overview" },
       { path: "/dashboard", label: "Dashboard", icon: <FiGrid /> }
@@ -50,7 +50,7 @@ export default function Layout() {
 
   navItems.push({ section: "Laporan" });
 
-  if (user?.role === "admin") {
+  if (user?.role === "admin" || user?.role === "user") {
     navItems.push({
       path: "/production/report",
       label: "Laporan Produksi",

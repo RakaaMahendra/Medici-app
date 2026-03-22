@@ -101,6 +101,7 @@ async function compareWithRecipe(productId, qty, items) {
     where: { productId },
     include: {
       model: RecipeItem,
+      include: [Material],
     },
   });
 
@@ -121,6 +122,8 @@ async function compareWithRecipe(productId, qty, items) {
 
     result.push({
       materialId: r.materialId,
+      materialName: r.Material ? r.Material.name : `Material #${r.materialId}`,
+      unit: r.Material ? r.Material.unit : "",
       expected,
       used,
       diff,
@@ -208,9 +211,11 @@ async function getProductionReport({
 
       items.push({
         material: pItem.Material.name,
+        unit: pItem.Material.unit || "",
         expected,
         used,
         diff,
+        diffPercent: expected > 0 ? ((diff / expected) * 100).toFixed(1) : null,
       });
     }
 

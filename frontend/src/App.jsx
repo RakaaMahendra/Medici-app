@@ -60,7 +60,7 @@ export default function App() {
         <Route
           index
           element={
-            user?.role === "admin" ? (
+            user?.role === "admin" || user?.role === "user" ? (
               <DashboardPage />
             ) : (
               <Navigate to="/products" />
@@ -70,7 +70,7 @@ export default function App() {
         <Route
           path="dashboard"
           element={
-            <ProtectedRoute roles={["admin"]}>
+            <ProtectedRoute roles={["admin", "user"]}>
               <DashboardPage />
             </ProtectedRoute>
           }
@@ -91,7 +91,7 @@ export default function App() {
         <Route
           path="production/report"
           element={
-            <ProtectedRoute roles={["admin"]}>
+            <ProtectedRoute roles={["admin", "user"]}>
               <ProductionReportPage />
             </ProtectedRoute>
           }

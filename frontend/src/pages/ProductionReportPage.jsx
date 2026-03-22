@@ -177,7 +177,10 @@ export default function ProductionReportPage() {
                               <span
                                 style={{ color: "var(--color-text-secondary)" }}
                               >
-                                exp: {item.expected} | used: {item.used}
+                                resep: {item.expected}
+                                {item.unit ? ` ${item.unit}` : ""} | aktual:{" "}
+                                {item.used}
+                                {item.unit ? ` ${item.unit}` : ""}
                               </span>
                               <span
                                 className={
@@ -189,7 +192,11 @@ export default function ProductionReportPage() {
                                 }
                               >
                                 ({item.diff > 0 ? "+" : ""}
-                                {item.diff})
+                                {item.diff}
+                                {item.diffPercent
+                                  ? ` / ${item.diffPercent}%`
+                                  : ""}
+                                )
                               </span>
                             </div>
                           ))}

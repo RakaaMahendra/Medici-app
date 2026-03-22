@@ -5,6 +5,7 @@ const {
   Material,
   sequelize,
 } = require("../models");
+const { calculateCOGS } = require("./cogsService");
 
 async function getAllRecipes() {
   return await Recipe.findAll({
@@ -67,6 +68,13 @@ async function createRecipe(data) {
 
     await t.commit();
 
+    // Auto-calculate COGS for this product
+    try {
+      await calculateCOGS(productId);
+    } catch (e) {
+      // COGS calculation may fail if no prices exist yet, that's ok
+    }
+
     return await Recipe.findByPk(recipe.id, {
       include: [{ model: Product }, { model: RecipeItem, include: [Material] }],
     });
@@ -102,6 +110,14 @@ async function updateRecipe(recipeId, data) {
     }
 
     await t.commit();
+
+    // Auto-calculate COGS for this product
+    try {
+      const recipe = await Recipe.findByPk(recipeId);
+      if (recipe) await calculateCOGS(recipe.productId);
+    } catch (e) {
+      // COGS calculation may fail if no prices exist yet, that's ok
+    }
 
     return await Recipe.findByPk(recipeId, {
       include: [{ model: Product }, { model: RecipeItem, include: [Material] }],

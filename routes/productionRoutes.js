@@ -6,6 +6,6 @@ const role = require("../middlewares/roleMiddleware");
 const { create, getReport } = require("../controllers/productionController");
 
 router.post("/", auth, role("staff"), create);
-router.get("/", auth, role("admin"), getReport);
+router.get("/", auth, role("admin", "user"), getReport);
 
 module.exports = router;

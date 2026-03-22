@@ -5,6 +5,6 @@ const role = require("../middlewares/roleMiddleware");
 
 const { dashboard } = require("../controllers/dashboardController");
 
-router.get("/", auth, role("admin"), dashboard);
+router.get("/", auth, role("admin", "user"), dashboard);
 
 module.exports = router;

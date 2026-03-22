@@ -56,8 +56,8 @@ export default function StockPage() {
       const params = { page, limit: 20 };
       if (logFilter) params.productId = logFilter;
       const res = await stockAPI.getLogs(params);
-      setLogs(res.data.rows || res.data);
-      setLogMeta({ total: res.data.count || 0, page });
+      setLogs(res.data.logs || []);
+      setLogMeta({ total: res.data.total || 0, page });
     } catch {
       showToast("Gagal memuat log stok", "error");
     }
