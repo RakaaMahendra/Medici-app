@@ -44,7 +44,8 @@ export default function Layout() {
   if (user?.role === "staff") {
     navItems.push(
       { path: "/production", label: "Produksi", icon: <FiTool /> },
-      { path: "/sales", label: "Penjualan", icon: <FiShoppingCart /> }
+      { path: "/pos", label: "Kasir (POS)", icon: <FiShoppingCart /> },
+      { path: "/sales", label: "Input Penjualan", icon: <FiFileText /> }
     );
   }
 

@@ -1,4 +1,8 @@
-const { createSale, getSalesReport } = require("../services/saleService");
+const {
+  createSale,
+  getSalesReport,
+  getProductsForPOS,
+} = require("../services/saleService");
 
 async function create(req, res, next) {
   try {
@@ -33,7 +37,17 @@ async function getReport(req, res, next) {
   }
 }
 
+async function posProducts(req, res, next) {
+  try {
+    const data = await getProductsForPOS();
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   create,
   getReport,
+  posProducts,
 };

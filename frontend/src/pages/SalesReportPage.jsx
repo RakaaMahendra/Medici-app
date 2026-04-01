@@ -11,6 +11,15 @@ function formatRupiah(num) {
   }).format(num || 0);
 }
 
+const PAYMENT_LABELS = {
+  cash: "Cash",
+  debit: "Debit",
+  credit: "Kredit",
+  transfer: "Transfer",
+  qris: "QRIS",
+  other: "Lainnya",
+};
+
 export default function SalesReportPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -176,6 +185,7 @@ export default function SalesReportPage() {
                     <th>ID</th>
                     <th>Tanggal</th>
                     <th>Item</th>
+                    <th>Pembayaran</th>
                     <th>Total</th>
                   </tr>
                 </thead>
@@ -212,6 +222,44 @@ export default function SalesReportPage() {
                             </div>
                           ))}
                         </div>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "2px 8px",
+                            borderRadius: 4,
+                            fontSize: "0.78rem",
+                            fontWeight: 500,
+                            background:
+                              sale.paymentMethod === "cash"
+                                ? "#e8f5e9"
+                                : sale.paymentMethod === "qris"
+                                ? "#e3f2fd"
+                                : "#fff3e0",
+                            color:
+                              sale.paymentMethod === "cash"
+                                ? "#2e7d32"
+                                : sale.paymentMethod === "qris"
+                                ? "#1565c0"
+                                : "#e65100",
+                          }}
+                        >
+                          {PAYMENT_LABELS[sale.paymentMethod] ||
+                            sale.paymentMethod ||
+                            "Cash"}
+                        </span>
+                        {sale.customerName && (
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "#999",
+                              marginTop: 2,
+                            }}
+                          >
+                            {sale.customerName}
+                          </div>
+                        )}
                       </td>
                       <td style={{ fontWeight: 700 }}>
                         {formatRupiah(sale.total)}

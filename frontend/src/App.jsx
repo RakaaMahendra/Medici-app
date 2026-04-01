@@ -13,6 +13,7 @@ import SuppliersPage from "./pages/SuppliersPage";
 import MaterialsPage from "./pages/MaterialsPage";
 import RecipesPage from "./pages/RecipesPage";
 import StockPage from "./pages/StockPage";
+import POSPage from "./pages/POSPage";
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -93,6 +94,14 @@ export default function App() {
           element={
             <ProtectedRoute roles={["admin", "user"]}>
               <ProductionReportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="pos"
+          element={
+            <ProtectedRoute roles={["staff"]}>
+              <POSPage />
             </ProtectedRoute>
           }
         />

@@ -19,6 +19,20 @@ module.exports = (sequelize, DataTypes) => {
       total: DataTypes.FLOAT,
       userId: DataTypes.INTEGER,
       date: DataTypes.DATE,
+      paymentMethod: {
+        type: DataTypes.STRING,
+        defaultValue: "cash",
+      },
+      paymentAmount: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
+      },
+      changeAmount: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
+      },
+      customerName: DataTypes.STRING,
+      notes: DataTypes.STRING,
     },
     {
       sequelize,

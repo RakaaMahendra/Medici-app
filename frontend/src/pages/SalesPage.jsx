@@ -7,6 +7,7 @@ import {
   FiCheckCircle,
   FiShoppingCart,
   FiPrinter,
+  FiDollarSign,
 } from "react-icons/fi";
 
 function formatRupiah(num) {
@@ -17,12 +18,25 @@ function formatRupiah(num) {
   }).format(num || 0);
 }
 
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "debit", label: "Debit" },
+  { value: "credit", label: "Kredit" },
+  { value: "transfer", label: "Transfer" },
+  { value: "qris", label: "QRIS" },
+  { value: "other", label: "Lainnya" },
+];
+
 export default function SalesPage() {
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([{ productId: "", qty: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [resultItems, setResultItems] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [notes, setNotes] = useState("");
   const { showToast, ToastComponent } = useToast();
   const receiptRef = useRef(null);
 
@@ -60,6 +74,11 @@ export default function SalesPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const estimatedTotal = getEstimatedTotal();
+    if (paymentMethod === "cash" && Number(paymentAmount) < estimatedTotal) {
+      showToast("Pembayaran kurang dari total", "error");
+      return;
+    }
     setSubmitting(true);
     setResult(null);
     try {
@@ -68,6 +87,11 @@ export default function SalesPage() {
           productId: Number(i.productId),
           qty: Number(i.qty),
         })),
+        paymentMethod,
+        paymentAmount:
+          paymentMethod === "cash" ? Number(paymentAmount) : estimatedTotal,
+        customerName: customerName || undefined,
+        notes: notes || undefined,
       };
       const res = await saleAPI.create(payload);
       setResult(res.data);
@@ -84,6 +108,10 @@ export default function SalesPage() {
       );
       showToast("Penjualan berhasil dicatat!");
       setItems([{ productId: "", qty: "" }]);
+      setPaymentAmount("");
+      setCustomerName("");
+      setNotes("");
+      setPaymentMethod("cash");
     } catch (err) {
       showToast(
         err.response?.data?.error || "Gagal mencatat penjualan",
@@ -263,6 +291,116 @@ export default function SalesPage() {
                   </span>
                 </div>
 
+                {/* Payment Method */}
+                <div style={{ marginBottom: 12 }}>
+                  <label className="form-label">Metode Pembayaran</label>
+                  <select
+                    className="form-select"
+                    value={paymentMethod}
+                    onChange={(e) => {
+                      setPaymentMethod(e.target.value);
+                      if (e.target.value !== "cash")
+                        setPaymentAmount(String(getEstimatedTotal()));
+                      else setPaymentAmount("");
+                    }}
+                    required
+                  >
+                    {PAYMENT_METHODS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Payment Amount */}
+                {paymentMethod === "cash" && (
+                  <div style={{ marginBottom: 12 }}>
+                    <label className="form-label">Jumlah Bayar</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="Masukkan jumlah uang..."
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      required
+                      min={0}
+                    />
+                    {Number(paymentAmount) > 0 && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          padding: "10px 14px",
+                          borderRadius: "var(--radius-sm)",
+                          background:
+                            Number(paymentAmount) >= getEstimatedTotal()
+                              ? "#e8f5e9"
+                              : "#ffebee",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color:
+                              Number(paymentAmount) >= getEstimatedTotal()
+                                ? "#2e7d32"
+                                : "#c62828",
+                          }}
+                        >
+                          {Number(paymentAmount) >= getEstimatedTotal()
+                            ? "Kembalian"
+                            : "Kurang"}
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            fontSize: "1.1rem",
+                            color:
+                              Number(paymentAmount) >= getEstimatedTotal()
+                                ? "#2e7d32"
+                                : "#c62828",
+                          }}
+                        >
+                          {formatRupiah(
+                            Math.abs(
+                              Number(paymentAmount) - getEstimatedTotal()
+                            )
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Customer Name */}
+                <div style={{ marginBottom: 12 }}>
+                  <label className="form-label">
+                    Nama Pelanggan (opsional)
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Nama pelanggan..."
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div style={{ marginBottom: 16 }}>
+                  <label className="form-label">Catatan (opsional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Catatan transaksi..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </div>
+
                 <button
                   type="submit"
                   className="btn btn-primary"
@@ -325,6 +463,32 @@ export default function SalesPage() {
                         ).toLocaleString("id-ID")}
                       </span>
                     </div>
+                    {result.customerName && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginBottom: 4,
+                        }}
+                      >
+                        <span>Pelanggan</span>
+                        <span>{result.customerName}</span>
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span>Pembayaran</span>
+                      <span>
+                        {PAYMENT_METHODS.find(
+                          (m) => m.value === result.paymentMethod
+                        )?.label || result.paymentMethod}
+                      </span>
+                    </div>
                   </div>
 
                   {resultItems.length > 0 && (
@@ -381,6 +545,34 @@ export default function SalesPage() {
                     >
                       {formatRupiah(result.total)}
                     </span>
+                  </div>
+
+                  {/* Payment details */}
+                  <div style={{ marginTop: 8, fontSize: "0.9rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: 4,
+                      }}
+                    >
+                      <span>Dibayar</span>
+                      <span>{formatRupiah(result.paymentAmount)}</span>
+                    </div>
+                    {result.paymentMethod === "cash" &&
+                      result.changeAmount > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontWeight: 700,
+                            color: "var(--color-success)",
+                          }}
+                        >
+                          <span>Kembalian</span>
+                          <span>{formatRupiah(result.changeAmount)}</span>
+                        </div>
+                      )}
                   </div>
 
                   <div

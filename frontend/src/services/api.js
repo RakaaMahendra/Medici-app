@@ -91,6 +91,7 @@ export const productionAPI = {
 export const saleAPI = {
   create: (data) => api.post("/sales", data),
   getReport: (params) => api.get("/sales", { params }),
+  getPOSProducts: () => api.get("/sales/pos/products"),
 };
 
 // Dashboard

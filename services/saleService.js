@@ -9,16 +9,32 @@ const {
 
 const { Op } = require("sequelize");
 
+const VALID_PAYMENT_METHODS = [
+  "cash",
+  "debit",
+  "credit",
+  "transfer",
+  "qris",
+  "other",
+];
+
 async function createSale(data) {
   const t = await sequelize.transaction();
 
   try {
-    const { items, userId } = data;
+    const { items, userId, paymentMethod, paymentAmount, customerName, notes } =
+      data;
 
     //  VALIDATION
 
     if (!items || items.length === 0) {
       throw new Error("items required");
+    }
+
+    if (!paymentMethod || !VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      throw new Error(
+        "paymentMethod harus salah satu: " + VALID_PAYMENT_METHODS.join(", ")
+      );
     }
 
     let total = 0;
@@ -29,6 +45,11 @@ async function createSale(data) {
         total: 0,
         date: new Date(),
         userId,
+        paymentMethod,
+        paymentAmount: paymentAmount || 0,
+        changeAmount: 0,
+        customerName: customerName || null,
+        notes: notes || null,
       },
       { transaction: t }
     );
@@ -58,11 +79,17 @@ async function createSale(data) {
       });
 
       if (!stock) {
-        throw new Error("stock not found");
+        throw new Error("stock not found for product: " + product.name);
       }
 
       if (stock.qty < item.qty) {
-        throw new Error("stock not enough");
+        throw new Error(
+          "Stok tidak cukup untuk " +
+            product.name +
+            " (tersedia: " +
+            stock.qty +
+            ")"
+        );
       }
 
       const price = product.price;
@@ -102,16 +129,61 @@ async function createSale(data) {
 
     sale.total = total;
 
+    // Calculate change for cash payments
+    const paidAmount = paymentAmount || 0;
+    if (paymentMethod === "cash") {
+      if (paidAmount < total) {
+        throw new Error(
+          "Pembayaran kurang. Total: " + total + ", Dibayar: " + paidAmount
+        );
+      }
+      sale.changeAmount = paidAmount - total;
+    } else {
+      // For non-cash, paymentAmount = total
+      sale.paymentAmount = paidAmount || total;
+      sale.changeAmount = 0;
+    }
+
     await sale.save({ transaction: t });
 
     await t.commit();
 
-    return sale;
+    // Reload with items for response
+    const result = await Sale.findByPk(sale.id, {
+      include: [
+        {
+          model: SaleItem,
+          include: [Product],
+        },
+      ],
+    });
+
+    return result;
   } catch (err) {
     await t.rollback();
 
     throw err;
   }
+}
+
+async function getProductsForPOS() {
+  const products = await Product.findAll({
+    include: [
+      {
+        model: Stock,
+        attributes: ["qty"],
+      },
+    ],
+    order: [["name", "ASC"]],
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    image: p.image,
+    stock: p.Stock ? p.Stock.qty : 0,
+  }));
 }
 
 async function getSalesReport({
@@ -163,5 +235,6 @@ async function getSalesReport({
 
 module.exports = {
   createSale,
+  getProductsForPOS,
   getSalesReport,
 };
